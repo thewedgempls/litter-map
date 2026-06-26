@@ -293,8 +293,8 @@ function openReportActionDialog(id){
     <div class="pop-inner">
       <div class="pop-age">${ageLabel(Date.now()-r.ts)}</div>
       <div class="pop-row">
-        <button class="btn btn-primary btn-sm" onclick="askStillHere()">🔄 Still Here</button>
-        <button class="btn btn-green  btn-sm"  onclick="askMarkCleaned()">✓ Mark Cleaned</button>
+        <button class="btn btn-primary btn-sm" onclick="askStillHere()">Still Here</button>
+        <button class="btn btn-green  btn-sm"  onclick="askMarkCleaned()">Mark Cleaned</button>
       </div>
     </div>
   `);
