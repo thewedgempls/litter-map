@@ -79,7 +79,8 @@ function ageLabel(ms){
 const uid=()=>crypto.randomUUID?.()??`${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 // ── APP STATE ─────────────────────────────────────────────────────────────
-let map,rl,pl,dl;
+let map,rl,pl,dl,locLayer;
+let locActive=false,locLatLng=null,recenterPending=false;
 let mode='report';
 let markers={};
 let drawPts=[], history=[];
@@ -98,11 +99,14 @@ function initMap(){
     subdomains:'abcd',
     maxZoom:22, maxNativeZoom:19,
   }).addTo(map);
+  locLayer=L.layerGroup().addTo(map); // below report markers in SVG stacking order
   rl=L.layerGroup().addTo(map);
   pl=L.layerGroup().addTo(map);
   dl=L.layerGroup().addTo(map);
   map.on('click',onMapClick);
   map.on('zoomend',()=>{if(mode==='route'&&drawPts.length>=2)redrawPreview();});
+  map.on('locationfound',onLocationFound);
+  map.on('locationerror',onLocationError);
   initDragListeners();
   loadReports();
   setMode('report');
@@ -493,6 +497,43 @@ function closeInfo(){
   if(!infoOpen)return;
   infoOpen=false;
   document.getElementById('info-panel').classList.add('hidden');
+}
+
+// ── GEOLOCATION ───────────────────────────────────────────────────────────
+function jumpToLocation(){
+  if(!locActive){
+    map.locate({watch:true,setView:false,enableHighAccuracy:true});
+    locActive=true;
+  }
+  if(locLatLng)map.setView([locLatLng.lat,locLatLng.lng],Math.max(map.getZoom(),18));
+  else recenterPending=true;
+}
+function onLocationFound(e){
+  const{lat,lng}=e.latlng;
+  locLatLng={lat,lng};
+  if(recenterPending){recenterPending=false;map.setView([lat,lng],Math.max(map.getZoom(),18));}
+  locLayer.clearLayers();
+  if(e.accuracy>10){
+    L.circle([lat,lng],{
+      radius:e.accuracy,color:'#2563eb',weight:1,
+      fillColor:'#2563eb',fillOpacity:.08,opacity:.25,interactive:false,
+    }).addTo(locLayer);
+  }
+  const dot=L.marker([lat,lng],{
+    icon:L.divIcon({html:'<div class="loc-dot"></div>',className:'',iconSize:[14,14],iconAnchor:[7,7]}),
+    zIndexOffset:100,
+  }).addTo(locLayer);
+  dot.on('click',ev=>{
+    L.DomEvent.stopPropagation(ev);
+    if(mode!=='report')return;
+    if(dialogState!==null){closeDialog();return;}
+    handleReportTap(locLatLng.lat,locLatLng.lng);
+  });
+}
+function onLocationError(){
+  const btn=document.getElementById('btn-geolocate');
+  btn.classList.add('geolocate-err');
+  setTimeout(()=>btn.classList.remove('geolocate-err'),1500);
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────
