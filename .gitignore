@@ -1,4 +1,4 @@
-node_modules/
-docs/*
-!docs/.nojekyll
-!docs/CNAME
+frontend/node_modules/
+frontend/docs/*
+!frontend/docs/.nojekyll
+!frontend/docs/CNAME
