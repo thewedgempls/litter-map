@@ -436,12 +436,15 @@ function exitCleanup(){setMode('report');}
 
 // ── MODE SWITCHING ────────────────────────────────────────────────────────
 const MODES={
-  report:{label:'Report',       color:'#4fbfbc',glow:'rgba(79,191,188,.28)', hint:'Tap the map to add a litter report'},
-  area:  {label:'Area Cleanup', color:'#d97706',glow:'rgba(217,119,6,.28)',  hint:'Tap to draw a polygon — drag points to adjust'},
-  route: {label:'Route Cleanup',color:'#7c3aed',glow:'rgba(124,58,237,.28)', hint:'Tap to add waypoints — drag points to adjust'},
+  report:{label:'Report',       color:'#4fbfbc',glow:'rgba(79,191,188,.28)',
+    info:'Tap anywhere on the map to add a new litter report.<br><br>Tap an existing marker to confirm it\'s still there or to mark it as cleaned up.<br><br>Reports fade from red to yellow over 14 days and are automatically removed.'},
+  area:  {label:'Area Cleanup', color:'#d97706',glow:'rgba(217,119,6,.28)',
+    info:'Tap points on the map to draw a polygon around your cleanup area.<br><br>Drag any point to reshape the polygon. Reports inside the area will be marked as cleaned.<br><br>You need at least 3 points to submit.'},
+  route: {label:'Route Cleanup',color:'#7c3aed',glow:'rgba(124,58,237,.28)',
+    info:'Tap to add waypoints along your cleanup route.<br><br>Drag points to adjust the path. Reports within 5m of the route will be marked as cleaned.<br><br>You need at least 2 waypoints to submit.'},
 };
 function setMode(m){
-  closeDialog();
+  closeDialog(); closeInfo();
   if(m!==mode){
     drawPts=[];history=[];
     dl.clearLayers();
@@ -455,7 +458,6 @@ function setMode(m){
   document.getElementById('map').classList.toggle('crosshair',isCleanup);
   const cfg=MODES[m];
   document.getElementById('badge').textContent=cfg.label;
-  document.getElementById('status-text').textContent=cfg.hint;
   // Drive the full palette from a single CSS variable pair
   document.documentElement.style.setProperty('--mode-color',cfg.color);
   document.documentElement.style.setProperty('--mode-glow',cfg.glow);
@@ -475,6 +477,22 @@ function ask(title,body){
 function resolveModal(val){
   document.getElementById('modal-overlay').classList.add('hidden');
   if(_res){_res(val);_res=null;}
+}
+
+// ── INFO PANEL ────────────────────────────────────────────────────────────
+let infoOpen=false;
+function toggleInfo(){infoOpen?closeInfo():openInfo();}
+function openInfo(){
+  infoOpen=true;
+  const cfg=MODES[mode];
+  document.getElementById('info-title').textContent=cfg.label;
+  document.getElementById('info-body').innerHTML=cfg.info;
+  document.getElementById('info-panel').classList.remove('hidden');
+}
+function closeInfo(){
+  if(!infoOpen)return;
+  infoOpen=false;
+  document.getElementById('info-panel').classList.add('hidden');
 }
 
 // ── BOOT ──────────────────────────────────────────────────────────────────

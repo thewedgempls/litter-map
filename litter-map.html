@@ -30,11 +30,16 @@
       </div>
       <span class="badge" id="badge"></span>
     </div>
-    <div class="header-hint" id="status-text"></div>
   </header>
 
   <div id="map-wrap">
     <div id="map"></div>
+    <div id="info-panel" class="hidden">
+      <button class="info-close" onclick="closeInfo()">✕</button>
+      <div class="info-title" id="info-title"></div>
+      <div id="info-body"></div>
+    </div>
+    <button id="btn-info" onclick="toggleInfo()" aria-label="How to use">i</button>
     <div id="legend">
       <div class="legend-title">Report Age</div>
       <div class="legend-bar"></div>
