@@ -4,24 +4,24 @@ A web app for the [Wedge neighborhood](https://thewedge.org) in Minneapolis, MN.
 
 ## Running the app
 
-No build step required. Open `litter-map.html` directly in a browser (`file://` or a local HTTP server). The app is self-contained: HTML references `litter-map.css` and `litter-map.js`, plus Leaflet 1.9.4 from cdnjs.
+No build step required. Open `index.html` directly in a browser (`file://` or a local HTTP server). The app is self-contained: HTML references `litter-map.css` and `litter-map.js`, plus Leaflet 1.9.4 from cdnjs.
 
 CartoDB Voyager tiles work fine when opening locally — the CORS/referrer restriction only affects sandboxed `<iframe>` embeds (e.g. no-code platforms with restrictive CSP).
 
 ## Building minified assets
 
-Minified files are written to `dist/` using Terser (JS), clean-css (CSS), and html-minifier-terser (HTML).
+Minified files are written to `docs/` using Terser (JS), clean-css (CSS), and html-minifier-terser (HTML).
 
 ```bash
 npm install       # first time only
 npm run build
 ```
 
-Output: `dist/litter-map.js`, `dist/litter-map.css`, `dist/litter-map.html`.
+Output: `docs/litter-map.js`, `docs/litter-map.css`, `docs/index.html`.
 
 ## Architecture
 
-Three source files: `litter-map.html` (structure), `litter-map.js` (all logic), `litter-map.css` (styles). Everything intentionally lives in these files with no bundler or framework.
+Three source files: `index.html` (structure), `litter-map.js` (all logic), `litter-map.css` (styles). Everything intentionally lives in these files with no bundler or framework.
 
 ## Brand / design
 

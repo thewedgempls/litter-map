@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Three files: `litter-map.html` (structure), `litter-map.js` (all logic), `litter-map.css` (styles). Everything intentionally lives in these files with no bundler or framework.
+Three files: `index.html` (structure), `litter-map.js` (all logic), `litter-map.css` (styles). Everything intentionally lives in these files with no bundler or framework.
 
 ### Data layer (`db` object)
 All persistence goes through the `db` object (currently `localStorage`). Never call `localStorage` directly. The migration path to Firestore is documented in the `DATA LAYER` comment block at the top of `litter-map.js` — every `db.*` call maps to a specific Firestore operation.
