@@ -12,9 +12,9 @@ const DIST = path.join(__dirname, 'dist');
   await fs.mkdir(DIST, { recursive: true });
 
   const [jsSource, cssSource, htmlSource] = await Promise.all([
-    fs.readFile(path.join(SRC, 'litter-tracker.js'), 'utf8'),
-    fs.readFile(path.join(SRC, 'litter-tracker.css'), 'utf8'),
-    fs.readFile(path.join(SRC, 'litter-tracker.html'), 'utf8'),
+    fs.readFile(path.join(SRC, 'litter-map.js'), 'utf8'),
+    fs.readFile(path.join(SRC, 'litter-map.css'), 'utf8'),
+    fs.readFile(path.join(SRC, 'litter-map.html'), 'utf8'),
   ]);
 
   // JS — mangle locals but NOT top-level names (inline onclick handlers call them by name)
@@ -36,15 +36,15 @@ const DIST = path.join(__dirname, 'dist');
   });
 
   await Promise.all([
-    fs.writeFile(path.join(DIST, 'litter-tracker.js'), jsResult.code),
-    fs.writeFile(path.join(DIST, 'litter-tracker.css'), cssResult.styles),
-    fs.writeFile(path.join(DIST, 'litter-tracker.html'), htmlResult),
+    fs.writeFile(path.join(DIST, 'litter-map.js'), jsResult.code),
+    fs.writeFile(path.join(DIST, 'litter-map.css'), cssResult.styles),
+    fs.writeFile(path.join(DIST, 'litter-map.html'), htmlResult),
   ]);
 
   const fmt = (n) => `${(n / 1024).toFixed(1)} kB`;
-  console.log(`litter-tracker.js   ${fmt(Buffer.byteLength(jsSource))} → ${fmt(Buffer.byteLength(jsResult.code))}`);
-  console.log(`litter-tracker.css  ${fmt(Buffer.byteLength(cssSource))} → ${fmt(Buffer.byteLength(cssResult.styles))}`);
-  console.log(`litter-tracker.html ${fmt(Buffer.byteLength(htmlSource))} → ${fmt(Buffer.byteLength(htmlResult))}`);
+  console.log(`litter-map.js   ${fmt(Buffer.byteLength(jsSource))} → ${fmt(Buffer.byteLength(jsResult.code))}`);
+  console.log(`litter-map.css  ${fmt(Buffer.byteLength(cssSource))} → ${fmt(Buffer.byteLength(cssResult.styles))}`);
+  console.log(`litter-map.html ${fmt(Buffer.byteLength(htmlSource))} → ${fmt(Buffer.byteLength(htmlResult))}`);
   console.log('\nBuild complete → dist/');
 })().catch((err) => {
   console.error(err);

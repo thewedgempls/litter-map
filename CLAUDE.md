@@ -4,16 +4,16 @@ This repository contains the Wedge Litter Map app, which is a web app designed f
 
 ## Running the app
 
-No build step. Open `litter-tracker.html` directly in a browser (`file://` or a local HTTP server). The app is self-contained: HTML references `litter-tracker.css` and `litter-tracker.js`, plus Leaflet 1.9.4 from cdnjs.
+No build step. Open `litter-map.html` directly in a browser (`file://` or a local HTTP server). The app is self-contained: HTML references `litter-map.css` and `litter-map.js`, plus Leaflet 1.9.4 from cdnjs.
 
 CartoDB Voyager tiles work fine when opening locally — the CORS/referrer restriction only affects sandboxed `<iframe>` embeds (e.g. no-code platforms with restrictive CSP).
 
 ## Architecture
 
-Three files: `litter-tracker.html` (structure), `litter-tracker.js` (all logic), `litter-tracker.css` (styles). Everything intentionally lives in these files with no bundler or framework.
+Three files: `litter-map.html` (structure), `litter-map.js` (all logic), `litter-map.css` (styles). Everything intentionally lives in these files with no bundler or framework.
 
 ### Data layer (`db` object)
-All persistence goes through the `db` object (currently `localStorage`). Never call `localStorage` directly. The migration path to Firestore is documented in the `DATA LAYER` comment block at the top of `litter-tracker.js` — every `db.*` call maps to a specific Firestore operation.
+All persistence goes through the `db` object (currently `localStorage`). Never call `localStorage` directly. The migration path to Firestore is documented in the `DATA LAYER` comment block at the top of `litter-map.js` — every `db.*` call maps to a specific Firestore operation.
 
 ### Map layers
 Three Leaflet layer groups on the map:
