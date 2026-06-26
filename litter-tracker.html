@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>the WEDGE Litter Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <link rel="stylesheet" href="litter-tracker.css">
+</head>
+<body>
+
+<div id="app">
+  <header id="app-header">
+    <div class="header-inner">
+      <!-- Real logo loads in production (thewedge.org domain bypasses hotlink protection).
+           The SVG fallback is shown in sandboxed/external environments. -->
+      <img src="https://thewedge.org/wp-content/uploads/2025/11/1.png"
+           class="header-logo" alt="The Wedge Neighborhood"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <svg class="header-logo" style="display:none" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="The Wedge Neighborhood">
+        <rect width="32" height="32" rx="7" fill="#4fbfbc"/>
+        <polygon points="16,5 29,27 3,27" fill="white" opacity="0.92"/>
+        <polygon points="16,13 24,27 8,27" fill="#3aacaa" opacity="0.42"/>
+      </svg>
+      <div class="header-wordmark">
+        <span class="w-the">the</span><span class="w-wedge">WEDGE</span><span class="w-sep">·</span><span class="w-app">Litter Tracker</span>
+      </div>
+      <span class="badge" id="badge"></span>
+    </div>
+    <div class="header-hint" id="status-text"></div>
+  </header>
+
+  <div id="map-wrap">
+    <div id="map"></div>
+    <div id="legend">
+      <div class="legend-title">Report Age</div>
+      <div class="legend-bar"></div>
+      <div class="legend-row"><span>Fresh</span><span>14 days</span></div>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <div id="tb-normal" class="tb-row">
+      <button class="btn btn-mode" id="btn-report" onclick="setMode('report')">📍 Report</button>
+      <button class="btn btn-mode" id="btn-area"   onclick="setMode('area')">⬡ Area Cleanup</button>
+      <button class="btn btn-mode" id="btn-route"  onclick="setMode('route')">〜 Route Cleanup</button>
+    </div>
+    <div id="tb-cleanup" class="hidden">
+      <div id="cleanup-hint"></div>
+      <div class="tb-row">
+        <button class="btn btn-muted btn-sm" id="btn-undo"   onclick="undoPoint()">↩ Undo</button>
+        <button class="btn btn-sm"           id="btn-submit" disabled onclick="submitCleanup()">✓ Submit Cleanup</button>
+        <button class="btn btn-red   btn-sm"                 onclick="exitCleanup()">✕ Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: cleanup submit only -->
+<div id="modal-overlay" class="hidden">
+  <div class="modal-box">
+    <h3 id="modal-title"></h3>
+    <p  id="modal-body"></p>
+    <div class="modal-btns">
+      <button class="btn btn-muted btn-sm" id="modal-cancel" onclick="resolveModal(false)">Cancel</button>
+      <button class="btn btn-primary btn-sm"                  onclick="resolveModal(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="litter-tracker.js"></script>
+</body>
+</html>
