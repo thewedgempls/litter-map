@@ -7,7 +7,7 @@ const CFG = {
   center:   [44.954472, -93.292365],
   zoom:     17,
   maxAgeMs: 14 * 86400 * 1000,
-  proximity: 5,
+  proximity: 5 * 0.9144,   // 5 yards in metres
   tickMs:   60_000,
 };
 
@@ -273,7 +273,7 @@ function openResetNearbyDialog(report){
   showPopup([report.lat,report.lng],`
     <div class="pop-inner">
       <div class="pop-title">Reset Report?</div>
-      <div class="pop-body">A report already exists within 5 m. Reset its age to confirm it's still here?</div>
+      <div class="pop-body">A report already exists within 5 yd. Reset its age to confirm it's still here?</div>
       <div class="pop-row">
         <button class="btn btn-muted btn-sm" onclick="closeDialog()">Cancel</button>
         <button class="btn btn-primary btn-sm" onclick="confirmReset()">Reset Age</button>
@@ -409,11 +409,39 @@ function updateAffected(){
   }
 }
 
+// ── CLEANUP MEASUREMENTS ──────────────────────────────────────────────────
+function polygonAreaSqYards(pts){
+  const R=6371000,rad=Math.PI/180;
+  const lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length*rad;
+  const cosLat=Math.cos(lat0);
+  let area=0;
+  for(let i=0;i<pts.length;i++){
+    const j=(i+1)%pts.length;
+    const xi=pts[i].lng*rad*R*cosLat,yi=pts[i].lat*rad*R;
+    const xj=pts[j].lng*rad*R*cosLat,yj=pts[j].lat*rad*R;
+    area+=xi*yj-xj*yi;
+  }
+  return Math.abs(area/2)*1.19599;
+}
+function routeDistanceMiles(pts){
+  let d=0;
+  for(let i=0;i<pts.length-1;i++)
+    d+=L.latLng(pts[i].lat,pts[i].lng).distanceTo([pts[i+1].lat,pts[i+1].lng]);
+  return d/1609.344;
+}
+
 // ── CLEANUP HINT ──────────────────────────────────────────────────────────
 function updateHint(){
   const n=drawPts.length,min=mode==='area'?3:2,noun=mode==='area'?'point':'waypoint';
-  document.getElementById('cleanup-hint').textContent=
-    `${n} ${noun}${n!==1?'s':''}${n<min?` — need at least ${min}`:''}`;
+  let hint;
+  if(mode==='area'&&n>=3){
+    hint=`${Math.round(polygonAreaSqYards(drawPts)).toLocaleString()} sq yd`;
+  } else if(mode==='route'&&n>=2){
+    hint=`${routeDistanceMiles(drawPts).toFixed(2)} mi`;
+  } else {
+    hint=`${n} ${noun}${n!==1?'s':''}${n<min?` — need at least ${min}`:''}`;
+  }
+  document.getElementById('cleanup-hint').textContent=hint;
   document.getElementById('btn-submit').disabled=(n<min);
   document.getElementById('btn-undo').disabled=(!history.length||draggingIdx!==null);
 }
@@ -445,7 +473,7 @@ const MODES={
   area:  {label:'Area Cleanup', color:'#d97706',glow:'rgba(217,119,6,.28)',
     info:'Tap points on the map to draw a polygon around your cleanup area.<br><br>Drag any point to reshape the polygon. Reports inside the area will be marked as cleaned.<br><br>You need at least 3 points to submit.'},
   route: {label:'Route Cleanup',color:'#7c3aed',glow:'rgba(124,58,237,.28)',
-    info:'Tap to add waypoints along your cleanup route.<br><br>Drag points to adjust the path. Reports within 5m of the route will be marked as cleaned.<br><br>You need at least 2 waypoints to submit.'},
+    info:'Tap to add waypoints along your cleanup route.<br><br>Drag points to adjust the path. Reports within 5 yd of the route will be marked as cleaned.<br><br>You need at least 2 waypoints to submit.'},
 };
 function setMode(m){
   closeDialog(); closeInfo();

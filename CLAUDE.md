@@ -33,7 +33,7 @@ Two known fixes prevent dialog regressions:
 - `suppressDismiss` is set for 150 ms when opening a confirmation popup, so the follow-on synthetic click doesn't immediately close it
 
 ### Proximity (`CFG.proximity`)
-`CFG.proximity` (5 metres) serves double duty: it's the dedup radius for new report taps (tapping within 5 m of an existing report offers to reset its age) AND the corridor buffer for Route Cleanup (reports within 5 m of the drawn polyline are highlighted and removed on submit).
+`CFG.proximity` (5 yards) serves double duty: it's the dedup radius for new report taps (tapping within 5 yd of an existing report offers to reset its age) AND the corridor buffer for Route Cleanup (reports within 5 yd of the drawn polyline are highlighted and removed on submit).
 
 ### Pulse layer diffing
 `updateAffected()` diffs `affectedIds` against the currently-rendered pulse rings rather than calling `pl.clearLayers()`. **Never call `pl.clearLayers()` inside the draw/drag loop** — it destroys SVG elements and resets CSS animation phases, making pulse rings start over on every drag frame.
