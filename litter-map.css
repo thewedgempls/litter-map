@@ -47,7 +47,7 @@ body{font-family:'Open Sans',sans-serif;background:#f3f8f7;color:#1a3534;-webkit
 /* ── Info button & panel ─────────────────────────────────────── */
 #btn-geolocate,#btn-info{
   position:absolute;right:10px;z-index:450;
-  width:30px;height:30px;border-radius:50%;
+  width:40px;height:40px;border-radius:50%;
   background:white;color:#4fbfbc;
   border:1.5px solid #cce0df;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
@@ -58,12 +58,12 @@ body{font-family:'Open Sans',sans-serif;background:#f3f8f7;color:#1a3534;-webkit
 #btn-geolocate:hover{background:#f3f8f7}
 #btn-geolocate.geolocate-err{border-color:#dc2626;color:#dc2626}
 #btn-info{
-  bottom:66px;
+  bottom:76px;
   font-family:'Georgia',serif;font-size:15px;font-style:italic;font-weight:bold;
 }
 #btn-info:hover{background:#f3f8f7}
 #info-panel{
-  position:absolute;bottom:104px;right:10px;z-index:450;
+  position:absolute;bottom:124px;right:10px;z-index:450;
   background:white;border:1.5px solid #cce0df;border-radius:13px;
   padding:14px 16px 14px;max-width:250px;
   box-shadow:0 4px 20px rgba(26,53,52,.12);
