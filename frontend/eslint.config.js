@@ -2,7 +2,7 @@ const js = require("@eslint/js");
 const globals = require("globals");
 
 module.exports = [
-  { ignores: ["docs/**", "node_modules/**"] },
+  { ignores: ["dist/**", "node_modules/**"] },
   {
     files: ["litter-map.js"],
     languageOptions: {

@@ -2,7 +2,7 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const SRC = __dirname;
-const DIST = path.join(__dirname, 'docs');
+const DIST = path.join(__dirname, 'dist');
 
 (async () => {
   const { minify: minifyJS } = await import('terser');
@@ -45,7 +45,7 @@ const DIST = path.join(__dirname, 'docs');
   console.log(`litter-map.js   ${fmt(Buffer.byteLength(jsSource))} → ${fmt(Buffer.byteLength(jsResult.code))}`);
   console.log(`litter-map.css  ${fmt(Buffer.byteLength(cssSource))} → ${fmt(Buffer.byteLength(cssResult.styles))}`);
   console.log(`index.html ${fmt(Buffer.byteLength(htmlSource))} → ${fmt(Buffer.byteLength(htmlResult))}`);
-  console.log('\nBuild complete → docs/');
+  console.log('\nBuild complete → dist/');
 })().catch((err) => {
   console.error(err);
   process.exit(1);

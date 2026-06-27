@@ -10,14 +10,26 @@ Open `index.html` directly in a browser. No need to build anything if you're jus
 
 ## Building minified assets
 
-Minified files are written to `docs/` using Terser (JS), clean-css (CSS), and html-minifier-terser (HTML).
+Minified files are written to `dist/` using Terser (JS), clean-css (CSS), and html-minifier-terser (HTML).
 
 ```bash
 npm install       # first time only
 npm run build
 ```
 
-Output: `docs/litter-map.js`, `docs/litter-map.css`, `docs/index.html`.
+Output: `dist/litter-map.js`, `dist/litter-map.css`, `dist/index.html`.
+
+## Deployment
+
+The frontend is hosted on GitHub Pages. Deployment is automated via `.github/workflows/deploy-frontend.yml`:
+
+- **Trigger**: any push to `main` that touches `frontend/**`, or manually via `workflow_dispatch`.
+- **Build job**: runs `npm ci` and `npm run build`, then uploads `frontend/dist/` as the Pages artifact.
+- **Deploy job**: deploys the artifact to the `github-pages` environment.
+
+Only one deployment runs at a time; in-progress deploys are never cancelled (the site is left in a working state).
+
+To deploy manually, go to **Actions → Deploy to GitHub Pages → Run workflow** in the GitHub UI.
 
 ## Brand / design
 
