@@ -19,6 +19,18 @@ npm run build
 
 Output: `docs/litter-map.js`, `docs/litter-map.css`, `docs/index.html`.
 
+## Deployment
+
+The frontend is hosted on GitHub Pages. Deployment is automated via `.github/workflows/deploy-frontend.yml`:
+
+- **Trigger**: any push to `main` that touches `frontend/**`, or manually via `workflow_dispatch`.
+- **Build job**: runs `npm ci` and `npm run build`, then uploads `frontend/docs/` as the Pages artifact.
+- **Deploy job**: deploys the artifact to the `github-pages` environment.
+
+Only one deployment runs at a time; in-progress deploys are never cancelled (the site is left in a working state).
+
+To deploy manually, go to **Actions → Deploy to GitHub Pages → Run workflow** in the GitHub UI.
+
 ## Brand / design
 
 - **Colors**: teal `#4fbfbc` (report mode), amber `#d97706` (area cleanup), purple `#7c3aed` (route cleanup). Dark text `#1a3534`, body `#6b7c7b`, border `#cce0df`, surface `#f3f8f7`.

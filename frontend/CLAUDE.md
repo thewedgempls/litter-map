@@ -41,6 +41,18 @@ Two known fixes prevent dialog regressions:
 ### Undo history
 `history` is a stack of `{type:'add'|'drag', ...}` entries. Drag moves push `{type:'drag', idx, from}` in `startDrag()` before modifying anything, so undo can restore the previous position.
 
+## CI/CD
+
+`.github/workflows/deploy-frontend.yml` deploys the frontend to GitHub Pages automatically on every push to `main` that touches `frontend/**`. It can also be triggered manually via `workflow_dispatch`.
+
+Pipeline steps:
+1. `npm ci` — clean install
+2. `npm run build` — writes minified output to `docs/`
+3. Upload `frontend/docs/` as the Pages artifact
+4. Deploy to the `github-pages` environment
+
+The `docs/` directory is the deployment artifact — its contents are exactly what gets served. Concurrency is limited to one Pages deploy at a time with `cancel-in-progress: false` so a deploy always finishes cleanly.
+
 ## Key constraints
 
 - **No `pl.clearLayers()` in draw/drag loops** — resets pulse animation phases.
