@@ -47,11 +47,11 @@ Two known fixes prevent dialog regressions:
 
 Pipeline steps:
 1. `npm ci` — clean install
-2. `npm run build` — writes minified output to `docs/`
-3. Upload `frontend/docs/` as the Pages artifact
+2. `npm run build` — writes minified output to `dist/`
+3. Upload `frontend/dist/` as the Pages artifact
 4. Deploy to the `github-pages` environment
 
-The `docs/` directory is the deployment artifact — its contents are exactly what gets served. Concurrency is limited to one Pages deploy at a time with `cancel-in-progress: false` so a deploy always finishes cleanly.
+The `dist/` directory is the deployment artifact — its contents are exactly what gets served. Concurrency is limited to one Pages deploy at a time with `cancel-in-progress: false` so a deploy always finishes cleanly.
 
 ## Key constraints
 

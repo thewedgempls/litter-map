@@ -4,5 +4,5 @@ A web app for the [Wedge neighborhood](https://thewedge.org) in Minneapolis, MN.
 
 ## Repository structure
 
-- `frontend/` — the web app (HTML/CSS/JS, no framework, builds to `frontend/docs/` for GitHub Pages deployment)
+- `frontend/` — the web app (HTML/CSS/JS, no framework, builds to `frontend/dist/` for GitHub Pages deployment)
 - `backend/` — Firebase backend (Firestore rules, indexes, and Cloud Functions)
