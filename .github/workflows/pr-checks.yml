@@ -39,6 +39,29 @@ jobs:
       - name: Lint HTML
         run: npm run lint:html
 
+  lint-backend:
+    name: Lint backend (ESLint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend/functions
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/functions/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint JS
+        run: npm run lint
+
   build:
     name: Build
     runs-on: ubuntu-latest
