@@ -100,8 +100,8 @@ body{font-family:'Open Sans',sans-serif;background:#f3f8f7;color:#1a3534;-webkit
   transition:background .15s,transform .08s,box-shadow .15s;
   user-select:none;line-height:1;
 }
-.btn:active:not(:disabled){transform:scale(.96)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:active:not(:disabled){transform:scale(.96)}
 
 .btn-mode{background:#f3f8f7;color:#6b7c7b;border:1.5px solid #cce0df}
 .btn-mode:hover:not(:disabled){background:#e8f3f2}

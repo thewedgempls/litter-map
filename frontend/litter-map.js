@@ -126,7 +126,7 @@ let map,rl,pl,dl,locLayer;
 let locActive=false,locLatLng=null,recenterPending=false;
 let mode='report';
 let markers={};
-let drawPts=[], history=[];
+let drawPts=[], editHistory=[];
 let affectedIds=new Set(), pulseMarkers={};
 let draggingIdx=null, wasDragging=false;
 // Dialog state
@@ -208,7 +208,7 @@ function nearestDot(cPt,hitPx){
   return -1;
 }
 function startDrag(idx){
-  history.push({type:'drag',idx,from:{...drawPts[idx]}});
+  editHistory.push({type:'drag',idx,from:{...drawPts[idx]}});
   draggingIdx=idx; wasDragging=true; map.dragging.disable();
   window.addEventListener('mousemove',wMM);
   window.addEventListener('mouseup',wMU);
@@ -421,10 +421,10 @@ function confirmMarkCleaned(){
 }
 
 // ── DRAW POINTS ───────────────────────────────────────────────────────────
-function addDrawPt(lat,lng){history.push({type:'add'});drawPts.push({lat,lng});redrawPreview();updateHint();}
+function addDrawPt(lat,lng){editHistory.push({type:'add'});drawPts.push({lat,lng});redrawPreview();updateHint();}
 function undoPoint(){
-  if(!history.length)return;
-  const last=history.pop();
+  if(!editHistory.length)return;
+  const last=editHistory.pop();
   if(last.type==='add')drawPts.pop();
   else if(last.type==='drag')drawPts[last.idx]=last.from;
   redrawPreview(); updateHint();
@@ -522,7 +522,7 @@ function updateHint(){
   }
   document.getElementById('cleanup-hint').textContent=hint;
   document.getElementById('btn-submit').disabled=(n<min);
-  document.getElementById('btn-undo').disabled=(!history.length||draggingIdx!==null);
+  document.getElementById('btn-undo').disabled=(!editHistory.length||draggingIdx!==null);
 }
 
 // ── SUBMIT CLEANUP ────────────────────────────────────────────────────────
@@ -557,7 +557,7 @@ const MODES={
 function setMode(m){
   closeDialog(); closeInfo();
   if(m!==mode){
-    drawPts=[];history=[];
+    drawPts=[];editHistory=[];
     dl.clearLayers();
     pl.clearLayers();pulseMarkers={};affectedIds.clear();
   }
