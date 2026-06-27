@@ -62,6 +62,26 @@ jobs:
       - name: Lint JS
         run: npm run lint
 
+  lint-workflows:
+    name: Lint workflows (actionlint / zizmor)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca # v1.7.12
+
+      - name: Run actionlint
+        run: actionlint -color
+
+      - name: Install zizmor
+        run: pip install zizmor==1.26.1
+
+      - name: Run zizmor
+        run: zizmor --no-online-audits .github/workflows/
+
   build:
     name: Build
     runs-on: ubuntu-latest
