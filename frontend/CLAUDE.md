@@ -8,7 +8,8 @@ Three files: `index.html` (structure), `litter-map.js` (all logic), `litter-map.
 All persistence goes through the `db` object (currently `localStorage`). Never call `localStorage` directly. The migration path to Firestore is documented in the `DATA LAYER` comment block at the top of `litter-map.js` — every `db.*` call maps to a specific Firestore operation.
 
 ### Map layers
-Three Leaflet layer groups on the map:
+Four Leaflet layer groups on the map (added to `map` in this order):
+- `locLayer` — geolocation blue-dot marker
 - `rl` — report circle markers
 - `pl` — pulse rings (green halos on affected reports during cleanup preview)
 - `dl` — draw points and route/area preview shapes
@@ -39,7 +40,7 @@ Two known fixes prevent dialog regressions:
 `updateAffected()` diffs `affectedIds` against the currently-rendered pulse rings rather than calling `pl.clearLayers()`. **Never call `pl.clearLayers()` inside the draw/drag loop** — it destroys SVG elements and resets CSS animation phases, making pulse rings start over on every drag frame.
 
 ### Undo history
-`history` is a stack of `{type:'add'|'drag', ...}` entries. Drag moves push `{type:'drag', idx, from}` in `startDrag()` before modifying anything, so undo can restore the previous position.
+`editHistory` is a stack of `{type:'add'|'drag', ...}` entries. Drag moves push `{type:'drag', idx, from}` in `startDrag()` before modifying anything, so undo can restore the previous position.
 
 ## Key constraints
 
