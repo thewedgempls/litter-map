@@ -33,13 +33,10 @@ jobs:
           cache: npm
           cache-dependency-path: backend/functions/package-lock.json
 
-      - name: Install firebase-tools
-        run: npm install -g firebase-tools@15.20.0
-
       - name: Install function dependencies
         working-directory: backend/functions
         run: npm ci
 
       - name: Deploy to Firebase
         working-directory: backend
-        run: firebase deploy --project litter-map-69921
+        run: ./functions/node_modules/.bin/firebase deploy --project litter-map-69921
