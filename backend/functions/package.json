@@ -1,0 +1,21 @@
+{
+  "name": "litter-map-functions",
+  "description": "Cloud Functions for the WEDGE Litter Tracker",
+  "scripts": {
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "24"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^7.2.5"
+  },
+  "private": true,
+  "allowScripts": {
+    "protobufjs@7.6.4": true,
+    "@firebase/util@1.15.1": true
+  }
+}

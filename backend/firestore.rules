@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /reports/{reportId} {
+      allow read: if request.auth != null;
+
+      // Create: authenticated user; exactly four fields present with valid types;
+      // cleanedAt must be null on creation so the snapshot query can filter on it.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['latitude', 'longitude', 'timestamp', 'cleanedAt'])
+        && request.resource.data.keys().hasAll(['latitude', 'longitude', 'timestamp', 'cleanedAt'])
+        && request.resource.data.latitude is number
+        && request.resource.data.longitude is number
+        && request.resource.data.timestamp is timestamp
+        && request.resource.data.cleanedAt == null;
+
+      // Update: latitude/longitude are immutable; timestamp may be refreshed;
+      // cleanedAt may transition from null to a timestamp (mark cleaned) but not back.
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['latitude', 'longitude', 'timestamp', 'cleanedAt'])
+        && request.resource.data.latitude == resource.data.latitude
+        && request.resource.data.longitude == resource.data.longitude
+        && request.resource.data.timestamp is timestamp
+        && (request.resource.data.cleanedAt == null || request.resource.data.cleanedAt is timestamp);
+    }
+  }
+}

@@ -2,3 +2,4 @@ frontend/node_modules/
 frontend/docs/*
 !frontend/docs/.nojekyll
 !frontend/docs/CNAME
+backend/functions/node_modules/

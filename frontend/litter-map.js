@@ -2,6 +2,20 @@
    the WEDGE Litter Tracker
    ══════════════════════════════════════════════════════════════════════ */
 
+// ── DEMO / FIREBASE TOGGLE ────────────────────────────────────────────────
+// Set DEMO_MODE = false and fill FIREBASE_CONFIG to connect to Firestore.
+// In demo mode the app works entirely from localStorage with no backend.
+const DEMO_MODE = true;
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC5QZloHmVaB0wMSZyI8HZR5DaEuOFfWCs",
+  authDomain: "litter-map-69921.firebaseapp.com",
+  projectId: "litter-map-69921",
+  storageBucket: "litter-map-69921.firebasestorage.app",
+  messagingSenderId: "571285630878",
+  appId: "1:571285630878:web:ca8b0ad556ca70a936b08f"
+};
+
 // ── CONFIG ────────────────────────────────────────────────────────────────
 const CFG = {
   center:   [44.954472, -93.292365],
@@ -12,26 +26,55 @@ const CFG = {
 };
 
 // ── DATA LAYER ────────────────────────────────────────────────────────────
-// Report schema: { id:string, lat:number, lng:number, ts:number (epoch ms) }
+// Report schema (in-memory): { id:string, latitude:number, longitude:number, timestamp:number (epoch ms), cleanedAt:number|null }
+// In live mode, timestamp and cleanedAt are stored as Firestore Timestamps and normalized to epoch ms on read.
 //
-// TO MIGRATE TO FIRESTORE:
-//   db.getAll()          → getDocs(collection(fs,'reports'))
-//   db.add(r)            → addDoc(collection(fs,'reports'), r)
-//   db.update(id, patch) → updateDoc(doc(fs,'reports',id), patch)
-//   db.remove(id)        → deleteDoc(doc(fs,'reports',id))
-//   db.removeMany(ids)   → writeBatch delete
-//   Live updates         → onSnapshot(collection(fs,'reports'), cb)
+// In demo mode all persistence uses localStorage.
+// In live mode (DEMO_MODE=false) all writes go to Firestore; getAll() returns
+// an in-memory cache kept fresh by an onSnapshot listener (see handleFirestoreSnapshot).
+// The doc id equals r.id, so markers/update/markCleaned all stay in sync.
 //
+// _fs is set during initMap() once Firebase is initialised (live mode only).
+let _fs = null;
+
 const db = (() => {
-  const KEY='litter_v1';
-  const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];}};
-  const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+  if (DEMO_MODE) {
+    const KEY='litter_v1';
+    const load=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];}};
+    const save=d=>localStorage.setItem(KEY,JSON.stringify(d));
+    return{
+      getAll:()=>load().filter(r=>!r.cleanedAt&&Date.now()-r.timestamp<CFG.maxAgeMs),
+      add:r=>{const rec={...r,cleanedAt:null,id:uid()};const d=load();d.push(rec);save(d);return rec;},
+      update:(id,p)=>{const d=load(),i=d.findIndex(r=>r.id===id);if(i>=0){Object.assign(d[i],p);save(d);return d[i];}return null;},
+      markCleaned:id=>{const d=load(),i=d.findIndex(r=>r.id===id);if(i>=0){d[i].cleanedAt=Date.now();save(d);}},
+      markCleanedMany:ids=>{const s=new Set(ids),d=load(),now=Date.now();d.forEach(r=>{if(s.has(r.id))r.cleanedAt=now;});save(d);},
+    };
+  }
+  // Live Firestore implementation — timestamps are stored as Firestore Timestamp objects
+  // and normalized to epoch ms by handleFirestoreSnapshot before entering _cache.
+  let _cache=[];
+  const col=()=>_fs.collection('reports');
+  const ts=ms=>firebase.firestore.Timestamp.fromMillis(ms);
   return{
-    getAll:()=>load(),
-    add:r=>{const d=load();d.push(r);save(d);},
-    update:(id,p)=>{const d=load(),i=d.findIndex(r=>r.id===id);if(i>=0){Object.assign(d[i],p);save(d);return d[i];}return null;},
-    remove:id=>save(load().filter(r=>r.id!==id)),
-    removeMany:ids=>{const s=new Set(ids);save(load().filter(r=>!s.has(r.id)));},
+    _setCache:data=>{_cache=data;},
+    getAll:()=>[..._cache],
+    add:({id:_,...data})=>col().add({
+      latitude:data.latitude,
+      longitude:data.longitude,
+      timestamp:ts(data.timestamp),
+      cleanedAt:null,
+    }),
+    update:(id,p)=>{
+      const patch={...p};
+      if(typeof patch.timestamp==='number')patch.timestamp=ts(patch.timestamp);
+      return col().doc(id).update(patch);
+    },
+    markCleaned:id=>col().doc(id).update({cleanedAt:firebase.firestore.Timestamp.now()}),
+    markCleanedMany:ids=>{
+      const b=_fs.batch(),now=firebase.firestore.Timestamp.now();
+      ids.forEach(id=>b.update(col().doc(id),{cleanedAt:now}));
+      return b.commit();
+    },
   };
 })();
 
@@ -91,8 +134,49 @@ let dialogState=null, dialogReportId=null, pendingLatLng=null;
 let currentPopup=null, pendingMarker=null;
 let suppressDismiss=false;
 
+// ── FIRESTORE SYNC ────────────────────────────────────────────────────────
+// Called on every Firestore snapshot. Diffs the incoming collection against
+// the current marker layer so the map stays in sync with remote changes.
+// Never touches pl (pulse rings) — only rl — to preserve pulse animation state.
+function handleFirestoreSnapshot(snapshot){
+  const now=Date.now(), live=new Map();
+  snapshot.forEach(d=>{
+    const raw=d.data();
+    const r={
+      id:d.id,
+      latitude:raw.latitude,
+      longitude:raw.longitude,
+      timestamp:raw.timestamp?.toMillis?.()??raw.timestamp,
+      cleanedAt:raw.cleanedAt?.toMillis?.()??raw.cleanedAt,
+    };
+    if(!r.cleanedAt&&now-r.timestamp<CFG.maxAgeMs)live.set(r.id,r);
+  });
+  // Remove markers for cleaned or newly-stale reports
+  Object.keys(markers).forEach(id=>{if(!live.has(id))removeMarker(id);});
+  // Add markers for new reports; refresh colours for updated ones
+  live.forEach((r,id)=>{
+    if(!markers[id])addMarker(r);
+    else markers[id].setStyle({fillColor:ageColor(now-r.timestamp)});
+  });
+  db._setCache([...live.values()]);
+}
+
 // ── MAP INIT ──────────────────────────────────────────────────────────────
 function initMap(){
+  if(!DEMO_MODE){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    _fs=firebase.firestore();
+    firebase.auth().signInAnonymously().catch(()=>{});
+    firebase.auth().onAuthStateChanged(user=>{
+      if(user){
+        const cutoff=firebase.firestore.Timestamp.fromMillis(Date.now()-CFG.maxAgeMs);
+        _fs.collection('reports')
+          .where('timestamp','>',cutoff)
+          .where('cleanedAt','==',null)
+          .onSnapshot(handleFirestoreSnapshot);
+      }
+    });
+  }
   map=L.map('map',{center:CFG.center,zoom:CFG.zoom,maxZoom:22});
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
@@ -168,12 +252,11 @@ function initDragListeners(){
 
 // ── REPORT MARKERS ────────────────────────────────────────────────────────
 function loadReports(){
-  const now=Date.now(),stale=[];
-  db.getAll().forEach(r=>{if(now-r.ts>=CFG.maxAgeMs)stale.push(r.id);else addMarker(r);});
-  if(stale.length)db.removeMany(stale);
+  db.getAll().forEach(r=>addMarker(r));
 }
 function addMarker(r){
-  const m=L.circleMarker([r.lat,r.lng],mkStyle(ageColor(Date.now()-r.ts)));
+  if(markers[r.id])return;
+  const m=L.circleMarker([r.latitude,r.longitude],mkStyle(ageColor(Date.now()-r.timestamp)));
   m.on('click',e=>{
     L.DomEvent.stopPropagation(e);
     if(mode!=='report')return;
@@ -193,13 +276,9 @@ function removeMarker(id){
 }
 function mkStyle(c){return{radius:9,fillColor:c,color:'#fff',weight:2,opacity:1,fillOpacity:.88};}
 function tickColors(){
-  const now=Date.now(),stale=[];
-  db.getAll().forEach(r=>{
-    const age=now-r.ts;
-    if(age>=CFG.maxAgeMs)stale.push(r.id);
-    else if(markers[r.id])markers[r.id].setStyle({fillColor:ageColor(age)});
-  });
-  if(stale.length){stale.forEach(removeMarker);db.removeMany(stale);}
+  const now=Date.now(),active=db.getAll(),activeIds=new Set(active.map(r=>r.id));
+  Object.keys(markers).forEach(id=>{if(!activeIds.has(id))removeMarker(id);});
+  active.forEach(r=>{if(markers[r.id])markers[r.id].setStyle({fillColor:ageColor(now-r.timestamp)});});
 }
 
 // ── MAP CLICK ─────────────────────────────────────────────────────────────
@@ -242,7 +321,7 @@ function closeDialog(){
 
 // ── New-report flow ───────────────────────────────────────────────────────
 function handleReportTap(lat,lng){
-  const near=db.getAll().find(r=>haversine(lat,lng,r.lat,r.lng)<=CFG.proximity);
+  const near=db.getAll().find(r=>haversine(lat,lng,r.latitude,r.longitude)<=CFG.proximity);
   near ? openResetNearbyDialog(near) : openNewReportDialog(lat,lng);
 }
 function openNewReportDialog(lat,lng){
@@ -264,13 +343,13 @@ function openNewReportDialog(lat,lng){
 }
 function confirmNewReport(){
   const{lat,lng}=pendingLatLng; closeDialog();
-  const r={id:uid(),lat,lng,ts:Date.now()};
-  db.add(r); addMarker(r);
+  if(DEMO_MODE)addMarker(db.add({latitude:lat,longitude:lng,timestamp:Date.now()}));
+  else db.add({latitude:lat,longitude:lng,timestamp:Date.now()});
 }
 function openResetNearbyDialog(report){
   closeDialog();
   dialogState='reset-nearby'; dialogReportId=report.id;
-  showPopup([report.lat,report.lng],`
+  showPopup([report.latitude,report.longitude],`
     <div class="pop-inner">
       <div class="pop-title">Reset Report?</div>
       <div class="pop-body">A report already exists within 5 yd. Reset its age to confirm it's still here?</div>
@@ -283,7 +362,7 @@ function openResetNearbyDialog(report){
 }
 function confirmReset(){
   const id=dialogReportId; closeDialog();
-  db.update(id,{ts:Date.now()});
+  db.update(id,{timestamp:Date.now()});
   if(markers[id])markers[id].setStyle({fillColor:ageColor(0)});
 }
 
@@ -293,9 +372,9 @@ function openReportActionDialog(id){
   const r=db.getAll().find(x=>x.id===id);
   if(!r)return;
   dialogState='report-action'; dialogReportId=id;
-  showPopup([r.lat,r.lng],`
+  showPopup([r.latitude,r.longitude],`
     <div class="pop-inner">
-      <div class="pop-age">${ageLabel(Date.now()-r.ts)}</div>
+      <div class="pop-age">${ageLabel(Date.now()-r.timestamp)}</div>
       <div class="pop-row">
         <button class="btn btn-primary btn-sm" onclick="askStillHere()">Still Here</button>
         <button class="btn btn-green  btn-sm"  onclick="askMarkCleaned()">Mark Cleaned</button>
@@ -333,12 +412,12 @@ function askMarkCleaned(){
 }
 function confirmStillHere(){
   const id=dialogReportId; closeDialog();
-  db.update(id,{ts:Date.now()});
+  db.update(id,{timestamp:Date.now()});
   if(markers[id])markers[id].setStyle({fillColor:ageColor(0)});
 }
 function confirmMarkCleaned(){
   const id=dialogReportId; closeDialog();
-  db.remove(id); removeMarker(id);
+  db.markCleaned(id); removeMarker(id);
 }
 
 // ── DRAW POINTS ───────────────────────────────────────────────────────────
@@ -382,11 +461,11 @@ function getAffectedIds(){
   const rows=db.getAll();
   let hit=[];
   if(mode==='area'&&drawPts.length>=3)
-    hit=rows.filter(r=>inPoly({lat:r.lat,lng:r.lng},drawPts));
+    hit=rows.filter(r=>inPoly({lat:r.latitude,lng:r.longitude},drawPts));
   else if(mode==='route'&&drawPts.length>=2)
     hit=rows.filter(r=>{
       for(let i=0;i<drawPts.length-1;i++)
-        if(distToSeg({lat:r.lat,lng:r.lng},drawPts[i],drawPts[i+1])<=CFG.proximity)return true;
+        if(distToSeg({lat:r.latitude,lng:r.longitude},drawPts[i],drawPts[i+1])<=CFG.proximity)return true;
       return false;
     });
   return new Set(hit.map(r=>r.id));
@@ -401,7 +480,7 @@ function updateAffected(){
     if(!affectedIds.has(id)){
       const r=db.getAll().find(x=>x.id===id);
       if(!r)continue;
-      pulseMarkers[id]=L.circleMarker([r.lat,r.lng],{
+      pulseMarkers[id]=L.circleMarker([r.latitude,r.longitude],{
         radius:9,fillColor:'transparent',color:'#4fbfbc',weight:2.5,opacity:1,fillOpacity:0,className:'pulse-ring',
       }).addTo(pl);
       affectedIds.add(id);
@@ -450,10 +529,10 @@ function updateHint(){
 async function submitCleanup(){
   const rows=db.getAll();
   let clean=[];
-  if(mode==='area')clean=rows.filter(r=>inPoly({lat:r.lat,lng:r.lng},drawPts));
+  if(mode==='area')clean=rows.filter(r=>inPoly({lat:r.latitude,lng:r.longitude},drawPts));
   else clean=rows.filter(r=>{
     for(let i=0;i<drawPts.length-1;i++)
-      if(distToSeg({lat:r.lat,lng:r.lng},drawPts[i],drawPts[i+1])<=CFG.proximity)return true;
+      if(distToSeg({lat:r.latitude,lng:r.longitude},drawPts[i],drawPts[i+1])<=CFG.proximity)return true;
     return false;
   });
   const n=clean.length;
@@ -462,7 +541,7 @@ async function submitCleanup(){
     :`Mark ${n} report${n!==1?'s':''} as cleaned?`;
   if(!await ask('Submit Cleanup?',body))return;
   const ids=clean.map(r=>r.id);
-  db.removeMany(ids); ids.forEach(removeMarker); exitCleanup();
+  db.markCleanedMany(ids); ids.forEach(removeMarker); exitCleanup();
 }
 function exitCleanup(){setMode('report');}
 
