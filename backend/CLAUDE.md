@@ -56,3 +56,9 @@ Or from `functions/` for functions only:
 npm run deploy
 npm run logs      # tail Cloud Functions logs
 ```
+
+## CI/CD
+
+`.github/workflows/deploy-backend.yml` runs `firebase deploy` on every push to `main` that touches `backend/**`, and can be triggered manually from the Actions tab.
+
+Authentication uses Workload Identity Federation (OIDC) — no service account key is stored anywhere. The job runs inside the `google-cloud` GitHub environment, which holds two repository variables: `WIF_PROVIDER` (the WIF provider resource name) and `FIREBASE_DEPLOYER_SA` (`firebase-deployer@litter-map-69921.iam.gserviceaccount.com`). See `backend/README.md` for the full GCloud resource architecture.
